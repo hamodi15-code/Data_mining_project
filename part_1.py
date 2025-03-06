@@ -98,31 +98,64 @@ def h_clustering(dim, k_clusters, points, dist=euclidean, clusts=[]):
     list: A list of clusters, where each cluster is a list of points.
     """
     # Initialize each point as its own cluster
-    clusters = [[point] for point in points]
+    clusters = [np.array([point]) for point in points]
     
     # Define distance threshold if k_clusters is None
     distance_threshold = 5.0  # Can be adjusted
+    max_iterations = 10000  # Prevent infinite loops
+    iteration = 0
     
     while len(clusters) > (k_clusters if k_clusters else 1):
+        if iteration >= max_iterations:
+            print("Stopping due to too many iterations")
+            break
+        iteration += 1
+        
         min_distance = float("inf")
         merge_pair = (-1, -1)
         
         # Find the closest pair of clusters
         for i in range(len(clusters)):
             for j in range(i + 1, len(clusters)):
-                d = dist(np.mean(clusters[i], axis=0), np.mean(clusters[j], axis=0))
-                if d < min_distance:
-                    min_distance = d
-                    merge_pair = (i, j)
+                if len(clusters[i]) == 0 or len(clusters[j]) == 0:
+                    continue  # Skip empty clusters
+                
+                try:
+                    mean_i = np.mean(clusters[i], axis=0)
+                    mean_j = np.mean(clusters[j], axis=0)
+                    
+                    if np.isnan(mean_i).any() or np.isnan(mean_j).any():
+                        print(f"Skipping cluster pair ({i}, {j}) due to NaN values.")
+                        continue
+                    
+                    if np.isinf(mean_i).any() or np.isinf(mean_j).any():
+                        print(f"Skipping cluster pair ({i}, {j}) due to Inf values.")
+                        continue
+                    
+                    d = dist(mean_i, mean_j)
+                    print(f"Checking clusters {i} and {j}: distance = {d:.4f}")  # Debug print
+                    if d < min_distance:
+                        min_distance = d
+                        merge_pair = (i, j)
+                except Exception as e:
+                    print(f"Error computing distance between clusters {i} and {j}: {e}")
+                    continue
         
         # Stop merging if using a threshold and the closest clusters are too far apart
         if k_clusters is None and min_distance > distance_threshold:
+            print("Stopping due to distance threshold")
             break
         
         # Merge the two closest clusters
         i, j = merge_pair
-        clusters[i].extend(clusters[j])
-        del clusters[j]
+        if i != -1 and j != -1:
+            print(f"Merging clusters {i} and {j} (distance: {min_distance:.4f})")  # Debug print
+            clusters[i] = np.vstack((clusters[i], clusters[j]))  # Use vstack instead of extend()
+            del clusters[j]  # Remove the merged cluster
+            
+        if len(clusters) <= k_clusters:
+            print("Stopping as required number of clusters reached")
+            break  # Stop if we reached the required number of clusters
     
     return clusters
 
@@ -219,7 +252,3 @@ def save_points(clusts, out_path, out_path_tagged):
             for point in cluster:
                 writer.writerow(list(point) + [cluster_id])
 
-
-load = load_data("data.csv", 2)
-data  =k_means(2,4,100,load)
-save_points(data, "output.csv", "output_tagged.csv")

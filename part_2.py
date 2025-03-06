@@ -1,7 +1,7 @@
 import numpy as np
 import csv
 
-def generate_data(dim, k_clusters, n_points, out_path, block_size=1000000, std_dev=1.5):
+def generate_large_data(dim, k_clusters, n_points, out_path, block_size=1000000, std_dev=1.5):
     """
     Generates large synthetic data in blocks to handle memory efficiently.
     """

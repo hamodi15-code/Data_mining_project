@@ -1,7 +1,7 @@
 import numpy as np
 import csv
 from part_1 import generate_data, load_data, h_clustering, k_means, save_points
-from part_2 import bfr_cluster, cure_cluster
+from part_2 import bfr_cluster, cure_cluster,generate_large_data
 
 def process_clustering(method, dim, k_clusters, n_points, in_path, out_path, block_size=1000000):
     """
